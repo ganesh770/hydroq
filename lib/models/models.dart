@@ -82,6 +82,10 @@ class UserProfile {
   final bool useWeightBasedGoal;
   final int manualGoalMl;
   final String unit;
+  final bool remindersEnabled;
+  final int reminderIntervalMinutes;
+  final TimeOfDay wakeTime;
+  final TimeOfDay sleepTime;
   final String name;
 
   const UserProfile({
@@ -90,6 +94,10 @@ class UserProfile {
     this.useWeightBasedGoal = true,
     this.manualGoalMl = 2500,
     this.unit = 'ml',
+    this.remindersEnabled = false,
+    this.reminderIntervalMinutes = 60,
+    this.wakeTime = const TimeOfDay(hour: 7, minute: 0),
+    this.sleepTime = const TimeOfDay(hour: 23, minute: 0),
     this.name = '',
   });
 
@@ -105,6 +113,10 @@ class UserProfile {
     bool? useWeightBasedGoal,
     int? manualGoalMl,
     String? unit,
+    bool? remindersEnabled,
+    int? reminderIntervalMinutes,
+    TimeOfDay? wakeTime,
+    TimeOfDay? sleepTime,
     String? name,
   }) =>
       UserProfile(
@@ -113,6 +125,11 @@ class UserProfile {
         useWeightBasedGoal: useWeightBasedGoal ?? this.useWeightBasedGoal,
         manualGoalMl: manualGoalMl ?? this.manualGoalMl,
         unit: unit ?? this.unit,
+        remindersEnabled: remindersEnabled ?? this.remindersEnabled,
+        reminderIntervalMinutes:
+            reminderIntervalMinutes ?? this.reminderIntervalMinutes,
+        wakeTime: wakeTime ?? this.wakeTime,
+        sleepTime: sleepTime ?? this.sleepTime,
         name: name ?? this.name,
       );
 
@@ -122,6 +139,12 @@ class UserProfile {
         'useWeightBasedGoal': useWeightBasedGoal,
         'manualGoalMl': manualGoalMl,
         'unit': unit,
+        'remindersEnabled': remindersEnabled,
+        'reminderIntervalMinutes': reminderIntervalMinutes,
+        'wakeHour': wakeTime.hour,
+        'wakeMinute': wakeTime.minute,
+        'sleepHour': sleepTime.hour,
+        'sleepMinute': sleepTime.minute,
         'name': name,
       };
 
@@ -134,6 +157,15 @@ class UserProfile {
         useWeightBasedGoal: json['useWeightBasedGoal'] as bool? ?? true,
         manualGoalMl: json['manualGoalMl'] as int? ?? 2500,
         unit: json['unit'] as String? ?? 'ml',
+        remindersEnabled: json['remindersEnabled'] as bool? ?? false,
+        reminderIntervalMinutes:
+            json['reminderIntervalMinutes'] as int? ?? 60,
+        wakeTime: TimeOfDay(
+            hour: json['wakeHour'] as int? ?? 7,
+            minute: json['wakeMinute'] as int? ?? 0),
+        sleepTime: TimeOfDay(
+            hour: json['sleepHour'] as int? ?? 23,
+            minute: json['sleepMinute'] as int? ?? 0),
         name: json['name'] as String? ?? '',
       );
 }

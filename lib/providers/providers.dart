@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/models.dart';
 import '../services/storage_service.dart';
-import '../services/notification_service.dart';
 
 final storageProvider = Provider<StorageService>((_) => StorageService());
 
