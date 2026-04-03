@@ -16,7 +16,6 @@ class HomeScreen extends ConsumerWidget {
     final profileAsync = ref.watch(profileProvider);
     final score = ref.watch(hydrationScoreProvider);
     final intake = ref.watch(todayEffectiveIntakeProvider);
-    final catchUpInterval = ref.watch(catchUpIntervalProvider);
     final todayEntries = ref.watch(todayEntriesProvider);
 
     return profileAsync.when(
@@ -79,10 +78,7 @@ class HomeScreen extends ConsumerWidget {
                       profile: profile,
                     ),
                     const SizedBox(height: 16),
-                    if (profile.catchUpModeEnabled &&
-                        catchUpInterval < profile.reminderIntervalMinutes &&
-                        progress < 1.0)
-                      _CatchUpBanner(interval: catchUpInterval),
+
                     const SizedBox(height: 16),
                     _QuickAddRow(profile: profile),
                     const SizedBox(height: 20),
@@ -330,43 +326,6 @@ class _RingPainter extends CustomPainter {
   bool shouldRepaint(_RingPainter old) => old.progress != progress;
 }
 
-// ── Catch-up banner ───────────────────────────────────────────────────────────
-
-class _CatchUpBanner extends StatelessWidget {
-  final int interval;
-  const _CatchUpBanner({required this.interval});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppTheme.warning.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-            color: AppTheme.warning.withOpacity(0.3), width: 0.5),
-      ),
-      child: Row(children: [
-        const Text('⚡', style: TextStyle(fontSize: 20)),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Smart catch-up mode active',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                        color: AppTheme.warning)),
-                Text('Reminders every $interval min to help you catch up',
-                    style: TextStyle(
-                        fontSize: 12, color: context.textSecondary)),
-              ]),
-        ),
-      ]),
-    );
-  }
-}
 
 // ── Quick add row ─────────────────────────────────────────────────────────────
 

@@ -12,12 +12,6 @@ class ProfileNotifier extends AsyncNotifier<UserProfile> {
   @override
   Future<UserProfile> build() async {
     final p = await ref.read(storageProvider).loadProfile();
-    // Await scheduling so any errors surface instead of being silently lost
-    try {
-      await NotificationService().scheduleReminders(p);
-    } catch (e) {
-      debugPrint('HydroQ: Error scheduling reminders: $e');
-    }
     return p;
   }
 
@@ -90,23 +84,7 @@ final hydrationScoreProvider = Provider<int>((ref) {
   return HydrationScore.calculate(todayEntries: entries, goalMl: goal);
 });
 
-final catchUpIntervalProvider = Provider<int>((ref) {
-  final profile =
-      ref.watch(profileProvider).value ?? const UserProfile();
-  if (!profile.catchUpModeEnabled) return profile.reminderIntervalMinutes;
 
-  final intake = ref.watch(todayEffectiveIntakeProvider);
-  final goal = profile.effectiveGoalMl;
-  final now = DateTime.now();
-  final sleepHour = profile.sleepTime.hour;
-  final hoursLeft = (sleepHour - now.hour).clamp(1, 24);
-  final mlLeft = (goal - intake).clamp(0, goal);
-  final glassesLeft = (mlLeft / 250).ceil();
-
-  if (glassesLeft <= 0) return profile.reminderIntervalMinutes;
-  final minutesPerGlass = ((hoursLeft * 60) / glassesLeft).round();
-  return minutesPerGlass.clamp(1, profile.reminderIntervalMinutes);
-});
 
 final weeklySummaryProvider = Provider<List<Map<String, dynamic>>>((ref) {
   final entries = ref.watch(entriesProvider).value ?? [];

@@ -82,12 +82,6 @@ class UserProfile {
   final bool useWeightBasedGoal;
   final int manualGoalMl;
   final String unit;
-  final int reminderIntervalMinutes;
-  final bool remindersEnabled;
-  final bool remindersMuted;
-  final TimeOfDay wakeTime;
-  final TimeOfDay sleepTime;
-  final bool catchUpModeEnabled;
   final String name;
 
   const UserProfile({
@@ -96,12 +90,6 @@ class UserProfile {
     this.useWeightBasedGoal = true,
     this.manualGoalMl = 2500,
     this.unit = 'ml',
-    this.reminderIntervalMinutes = 90,
-    this.remindersEnabled = false,
-    this.remindersMuted = false,
-    this.wakeTime = const TimeOfDay(hour: 7, minute: 0),
-    this.sleepTime = const TimeOfDay(hour: 23, minute: 0),
-    this.catchUpModeEnabled = true,
     this.name = '',
   });
 
@@ -117,12 +105,6 @@ class UserProfile {
     bool? useWeightBasedGoal,
     int? manualGoalMl,
     String? unit,
-    int? reminderIntervalMinutes,
-    bool? remindersEnabled,
-    bool? remindersMuted,
-    TimeOfDay? wakeTime,
-    TimeOfDay? sleepTime,
-    bool? catchUpModeEnabled,
     String? name,
   }) =>
       UserProfile(
@@ -131,13 +113,6 @@ class UserProfile {
         useWeightBasedGoal: useWeightBasedGoal ?? this.useWeightBasedGoal,
         manualGoalMl: manualGoalMl ?? this.manualGoalMl,
         unit: unit ?? this.unit,
-        reminderIntervalMinutes:
-            reminderIntervalMinutes ?? this.reminderIntervalMinutes,
-        remindersEnabled: remindersEnabled ?? this.remindersEnabled,
-        remindersMuted: remindersMuted ?? this.remindersMuted,
-        wakeTime: wakeTime ?? this.wakeTime,
-        sleepTime: sleepTime ?? this.sleepTime,
-        catchUpModeEnabled: catchUpModeEnabled ?? this.catchUpModeEnabled,
         name: name ?? this.name,
       );
 
@@ -147,14 +122,6 @@ class UserProfile {
         'useWeightBasedGoal': useWeightBasedGoal,
         'manualGoalMl': manualGoalMl,
         'unit': unit,
-        'reminderIntervalMinutes': reminderIntervalMinutes,
-        'remindersEnabled': remindersEnabled,
-        'remindersMuted': remindersMuted,
-        'wakeHour': wakeTime.hour,
-        'wakeMinute': wakeTime.minute,
-        'sleepHour': sleepTime.hour,
-        'sleepMinute': sleepTime.minute,
-        'catchUpModeEnabled': catchUpModeEnabled,
         'name': name,
       };
 
@@ -167,17 +134,6 @@ class UserProfile {
         useWeightBasedGoal: json['useWeightBasedGoal'] as bool? ?? true,
         manualGoalMl: json['manualGoalMl'] as int? ?? 2500,
         unit: json['unit'] as String? ?? 'ml',
-        reminderIntervalMinutes:
-            json['reminderIntervalMinutes'] as int? ?? 90,
-        remindersEnabled: json['remindersEnabled'] as bool? ?? false,
-        remindersMuted: json['remindersMuted'] as bool? ?? false,
-        wakeTime: TimeOfDay(
-            hour: json['wakeHour'] as int? ?? 7,
-            minute: json['wakeMinute'] as int? ?? 0),
-        sleepTime: TimeOfDay(
-            hour: json['sleepHour'] as int? ?? 23,
-            minute: json['sleepMinute'] as int? ?? 0),
-        catchUpModeEnabled: json['catchUpModeEnabled'] as bool? ?? true,
         name: json['name'] as String? ?? '',
       );
 }

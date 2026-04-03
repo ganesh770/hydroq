@@ -4,9 +4,6 @@ import '../models/models.dart';
 import '../providers/providers.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_theme.dart';
-import '../services/notification_service.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:auto_start_flutter/auto_start_flutter.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -131,173 +128,7 @@ class SettingsScreen extends ConsumerWidget {
 
             const SizedBox(height: 16),
 
-            // ── Reminders ────────────────────────────────────────────────
-            _Section('Reminders'),
-            Card(
-              child: Column(children: [
-                SwitchListTile(
-                  secondary: const Icon(Icons.notifications_outlined),
-                  title: const Text('Enable reminders'),
-                  subtitle: const Text('Get nudged to drink water'),
-                  value: profile.remindersEnabled,
-                  onChanged: (v) async {
-                    final updated = profile.copyWith(remindersEnabled: v);
-                    await _save(ref, updated);
-                    if (v) {
-                      final granted =
-                          await NotificationService().requestPermissions();
-                      if (granted) {
-                        // Request Unrestricted Battery
-                        if (await Permission.ignoreBatteryOptimizations.isDenied) {
-                          await Permission.ignoreBatteryOptimizations.request();
-                        }
-                        
-                        // Request OEM Auto-Start (Vivo/Xiaomi/Oppo/etc)
-                        try {
-                          final isAvailable = await isAutoStartAvailable;
-                          if (isAvailable == true) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('⚠️ Please enable Auto-Start to prevent your phone from killing your reminders!'),
-                                  duration: Duration(seconds: 4),
-                                ),
-                              );
-                            }
-                            await getAutoStartPermission();
-                          }
-                        } catch (_) {}
 
-                        await NotificationService().scheduleReminders(updated);
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('✅ Reminders scheduled!'),
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12)),
-                            ),
-                          );
-                        }
-                      } else {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('⚠️ Permission denied. Enable in phone Settings > Apps > HydroQ > Notifications'),
-                              duration: Duration(seconds: 4),
-                            ),
-                          );
-                        }
-                      }
-                    } else {
-                      await NotificationService().cancelAll();
-                    }
-                  },
-                ),
-                if (profile.remindersEnabled) ...[
-                  const Divider(height: 1),
-                  SwitchListTile(
-                    secondary: Icon(profile.remindersMuted ? Icons.volume_off_outlined : Icons.volume_up_outlined),
-                    title: const Text('Mute reminders'),
-                    subtitle: const Text('Deliver silently without sound or vibration'),
-                    value: profile.remindersMuted,
-                    onChanged: (v) async {
-                      final updated = profile.copyWith(remindersMuted: v);
-                      await _save(ref, updated);
-                      await NotificationService().scheduleReminders(updated);
-                    },
-                  ),
-                  const Divider(height: 1),
-                  SwitchListTile(
-                    secondary: const Icon(Icons.bolt_outlined),
-                    title: const Text('Catch-up mode'),
-                    subtitle: const Text(
-                        'Auto-increase frequency when behind'),
-                    value: profile.catchUpModeEnabled,
-                    onChanged: (v) => _save(ref, profile.copyWith(catchUpModeEnabled: v)),
-                  ),
-                  const Divider(height: 1),
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                              'Every ${profile.reminderIntervalMinutes} minutes',
-                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                          Slider(
-                            value: profile.reminderIntervalMinutes.toDouble(),
-                            min: 1, max: 240, divisions: 239,
-                            label: '${profile.reminderIntervalMinutes} min',
-                            onChanged: (v) => _save(ref, profile.copyWith(reminderIntervalMinutes: v.round())),
-                            onChangeEnd: (v) async {
-                              // Reschedule when slider settles
-                              final updated = profile.copyWith(
-                                  reminderIntervalMinutes: v.round());
-                              await NotificationService().scheduleReminders(updated);
-                            },
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('1 min', style: TextStyle(fontSize: 12, color: context.textSecondary)),
-                              Text('4 hrs', style: TextStyle(fontSize: 12, color: context.textSecondary)),
-                            ],
-                          ),
-                        ]),
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.wb_sunny_outlined),
-                    title: const Text('Wake up time'),
-                    trailing: Text(profile.wakeTime.format(context),
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.primary)),
-                    onTap: () => _pickTime(context, ref, profile, isWake: true),
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.bedtime_outlined),
-                    title: const Text('Sleep time'),
-                    trailing: Text(profile.sleepTime.format(context),
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.primary)),
-                    onTap: () =>
-                        _pickTime(context, ref, profile, isWake: false),
-                  ),
-                ],
-              ]),
-            ),
-
-            const SizedBox(height: 16),
-
-            // ── Notification info box ─────────────────────────────────────
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppTheme.primary.withOpacity(0.07),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                    color: AppTheme.primary.withOpacity(0.2), width: 0.5),
-              ),
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('ℹ️ How reminders work',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                            color: AppTheme.primary)),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Reminders are automatically scheduled between your wake and sleep times. '
-                      'On Android 14+, grant "Exact alarms" permission in phone Settings if reminders don\'t fire.',
-                      style: TextStyle(
-                          fontSize: 12, color: context.textSecondary, height: 1.5),
-                    ),
-                  ]),
-            ),
 
             const SizedBox(height: 24),
           ],
@@ -336,23 +167,7 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _pickTime(
-      BuildContext ctx, WidgetRef ref, UserProfile profile,
-      {required bool isWake}) async {
-    final picked = await showTimePicker(
-      context: ctx,
-      initialTime: isWake ? profile.wakeTime : profile.sleepTime,
-    );
-    if (picked == null) return;
-    final updated = isWake
-        ? profile.copyWith(wakeTime: picked)
-        : profile.copyWith(sleepTime: picked);
-    await _save(ref, updated);
-    // Reschedule with new times
-    if (updated.remindersEnabled) {
-      await NotificationService().scheduleReminders(updated);
-    }
-  }
+
 }
 
 class _Section extends StatelessWidget {

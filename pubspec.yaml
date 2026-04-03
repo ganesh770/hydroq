@@ -12,10 +12,6 @@ dependencies:
   flutter_riverpod: ^2.4.10
   shared_preferences: ^2.2.2
   flutter_local_notifications: ^17.2.2
-  timezone: ^0.9.4
-  flutter_timezone: any
-  permission_handler: ^12.0.1
-  auto_start_flutter: ^1.1.0
 
 dev_dependencies:
   flutter_test:
