@@ -139,48 +139,85 @@ class SettingsScreen extends ConsumerWidget {
                       ? 'Active — every ${profile.reminderIntervalMinutes} min'
                       : 'Get nudged to drink water'),
                   value: profile.remindersEnabled,
-                  onChanged: (v) => _toggleReminders(context, ref, profile, v),
+                  onChanged: (v) async {
+                    // 1. Save FIRST so the toggle updates instantly
+                    final updated = profile.copyWith(remindersEnabled: v);
+                    await _save(ref, updated);
+
+                    if (v) {
+                      // 2. Request notification permission
+                      final granted =
+                          await NotificationService().requestPermissions();
+                      if (granted) {
+                        // 3. Schedule
+                        final count = await NotificationService()
+                            .scheduleReminders(updated);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(count > 0
+                                  ? '✅ $count reminders scheduled!'
+                                  : '😴 No slots left today — will start tomorrow'),
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                            ),
+                          );
+                        }
+                      } else {
+                        // Permission denied — revert the toggle
+                        await _save(
+                            ref, profile.copyWith(remindersEnabled: false));
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                  '⚠️ Permission denied. Enable in Settings > Apps > HydroQ > Notifications'),
+                              duration: Duration(seconds: 4),
+                            ),
+                          );
+                        }
+                      }
+                    } else {
+                      // Turned off
+                      await NotificationService().cancelAll();
+                    }
+                  },
                 ),
                 if (profile.remindersEnabled) ...[
                   const Divider(height: 1),
+                  // ── Frequency: 30 min or 1 hour ──
                   Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                              'Every ${profile.reminderIntervalMinutes} minutes',
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w600, fontSize: 14)),
-                          Slider(
-                            value: profile.reminderIntervalMinutes.toDouble(),
-                            min: 15, max: 240, divisions: 15,
-                            label: '${profile.reminderIntervalMinutes} min',
-                            onChanged: (v) => _save(
-                                ref,
-                                profile.copyWith(
-                                    reminderIntervalMinutes: v.round())),
-                            onChangeEnd: (v) async {
-                              final updated = profile.copyWith(
-                                  reminderIntervalMinutes: v.round());
-                              await NotificationService()
-                                  .scheduleReminders(updated);
-                            },
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('15 min',
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      color: context.textSecondary)),
-                              Text('4 hrs',
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      color: context.textSecondary)),
-                            ],
-                          ),
-                        ]),
+                    padding: const EdgeInsets.only(left: 16, top: 12, bottom: 4),
+                    child: Text('Frequency',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600, fontSize: 14)),
+                  ),
+                  RadioListTile<int>(
+                    title: const Text('Every 30 minutes'),
+                    value: 30,
+                    groupValue: profile.reminderIntervalMinutes,
+                    onChanged: (v) async {
+                      if (v != null) {
+                        final updated =
+                            profile.copyWith(reminderIntervalMinutes: v);
+                        await _save(ref, updated);
+                        await NotificationService().scheduleReminders(updated);
+                      }
+                    },
+                  ),
+                  RadioListTile<int>(
+                    title: const Text('Every 1 hour'),
+                    value: 60,
+                    groupValue: profile.reminderIntervalMinutes,
+                    onChanged: (v) async {
+                      if (v != null) {
+                        final updated =
+                            profile.copyWith(reminderIntervalMinutes: v);
+                        await _save(ref, updated);
+                        await NotificationService().scheduleReminders(updated);
+                      }
+                    },
                   ),
                   const Divider(height: 1),
                   ListTile(
@@ -203,59 +240,29 @@ class SettingsScreen extends ConsumerWidget {
                     onTap: () =>
                         _pickTime(context, ref, profile, isWake: false),
                   ),
+                  const Divider(height: 1),
+                  // ── Test notification ──
+                  ListTile(
+                    leading: const Icon(Icons.notifications_active_outlined,
+                        color: AppTheme.primary),
+                    title: const Text('Test Notification Now'),
+                    subtitle:
+                        const Text('Trigger an immediate popup to verify'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () async {
+                      await NotificationService().testNotification();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content:
+                                  Text('Test notification sent! Check your notification tray.')),
+                        );
+                      }
+                    },
+                  ),
                 ],
               ]),
             ),
-
-            // ── Reminder status info ──────────────────────────────────
-            if (profile.remindersEnabled) ...[
-              const SizedBox(height: 12),
-              FutureBuilder<int>(
-                future: NotificationService().getPendingCount(),
-                builder: (context, snap) {
-                  final count = snap.data ?? 0;
-                  return Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: count > 0
-                          ? AppTheme.primary.withOpacity(0.07)
-                          : AppTheme.danger.withOpacity(0.07),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                          color: count > 0
-                              ? AppTheme.primary.withOpacity(0.2)
-                              : AppTheme.danger.withOpacity(0.2),
-                          width: 0.5),
-                    ),
-                    child: Row(children: [
-                      Icon(
-                        count > 0
-                            ? Icons.check_circle_outline
-                            : Icons.warning_amber_outlined,
-                        size: 20,
-                        color: count > 0
-                            ? AppTheme.primary
-                            : AppTheme.danger,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          count > 0
-                              ? '$count reminders scheduled ✓'
-                              : 'No reminders scheduled — try toggling off/on',
-                          style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: count > 0
-                                  ? AppTheme.primary
-                                  : AppTheme.danger),
-                        ),
-                      ),
-                    ]),
-                  );
-                },
-              ),
-            ],
 
             const SizedBox(height: 24),
           ],
@@ -266,55 +273,6 @@ class SettingsScreen extends ConsumerWidget {
 
   Future<void> _save(WidgetRef ref, UserProfile profile) async {
     await ref.read(profileProvider.notifier).save(profile);
-  }
-
-  Future<void> _toggleReminders(
-      BuildContext context, WidgetRef ref, UserProfile profile, bool enable) async {
-    final updated = profile.copyWith(remindersEnabled: enable);
-    await _save(ref, updated);
-
-    if (enable) {
-      // Request all necessary permissions
-      final granted = await NotificationService().requestPermissions();
-
-      if (granted) {
-        await NotificationService().scheduleReminders(updated);
-        final pendingCount = await NotificationService().getPendingCount();
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('✅ $pendingCount reminders scheduled!'),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
-          );
-        }
-      } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                  '⚠️ Permission denied. Enable in Settings > Apps > HydroQ > Notifications'),
-              duration: Duration(seconds: 4),
-            ),
-          );
-        }
-      }
-    } else {
-      await NotificationService().cancelAll();
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Reminders turned off'),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-      }
-    }
   }
 
   void _editName(BuildContext ctx, WidgetRef ref, UserProfile profile) {
@@ -355,7 +313,6 @@ class SettingsScreen extends ConsumerWidget {
         ? profile.copyWith(wakeTime: picked)
         : profile.copyWith(sleepTime: picked);
     await _save(ref, updated);
-    // Reschedule with new times
     if (updated.remindersEnabled) {
       await NotificationService().scheduleReminders(updated);
     }
