@@ -117,30 +117,6 @@ class NotificationService {
     return lastScheduledCount;
   }
 
-  // ── Test notification ───────────────────────────────────────────────────
-
-  Future<void> testNotification() async {
-    await _plugin.show(
-      88,
-      '🧪 Test Notification',
-      'If you see this, notifications work on your phone!',
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          _channelId,
-          _channelName,
-          importance: Importance.high,
-          priority: Priority.high,
-          icon: '@mipmap/ic_launcher',
-          color: Color(0xFF2979FF),
-        ),
-        iOS: DarwinNotificationDetails(
-          presentAlert: true,
-          presentSound: true,
-        ),
-      ),
-    );
-  }
-
   // ── Cancel ──────────────────────────────────────────────────────────────
 
   Future<void> cancelAll() async {

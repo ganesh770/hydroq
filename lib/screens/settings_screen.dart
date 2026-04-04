@@ -240,26 +240,6 @@ class SettingsScreen extends ConsumerWidget {
                     onTap: () =>
                         _pickTime(context, ref, profile, isWake: false),
                   ),
-                  const Divider(height: 1),
-                  // ── Test notification ──
-                  ListTile(
-                    leading: const Icon(Icons.notifications_active_outlined,
-                        color: AppTheme.primary),
-                    title: const Text('Test Notification Now'),
-                    subtitle:
-                        const Text('Trigger an immediate popup to verify'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () async {
-                      await NotificationService().testNotification();
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content:
-                                  Text('Test notification sent! Check your notification tray.')),
-                        );
-                      }
-                    },
-                  ),
                 ],
               ]),
             ),

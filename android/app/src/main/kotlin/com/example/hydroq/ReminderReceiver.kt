@@ -15,6 +15,11 @@ import java.util.Calendar
 class ReminderReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
+        // Invincible recursive scheduling loop
+        if (intent.action == "com.example.hydroq.WATER_REMINDER") {
+            scheduleNext(context)
+        }
+
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val profileJson = prefs.getString(PROFILE_KEY, null) ?: return
         
@@ -117,9 +122,8 @@ class ReminderReceiver : BroadcastReceiver() {
                     return
                 }
 
-                // TEMPORARY: Forcing 1-minute intervals to allow for immediate testing!
-                // val intervalMin = profile.optInt("reminderIntervalMinutes", 60)
-                val intervalMillis = 1 * 60 * 1000L // 1 MINUTE FOR TESTING
+                val intervalMin = profile.optInt("reminderIntervalMinutes", 60)
+                val intervalMillis = intervalMin * 60 * 1000L
 
                 val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
                 val intent = Intent(context, ReminderReceiver::class.java).apply {
@@ -131,13 +135,16 @@ class ReminderReceiver : BroadcastReceiver() {
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
 
-                // The reference app implementation: setRepeating
-                alarmManager.setRepeating(
-                    AlarmManager.RTC_WAKEUP,
-                    System.currentTimeMillis() + intervalMillis,
-                    intervalMillis,
-                    pendingIntent
-                )
+                val triggerAt = System.currentTimeMillis() + intervalMillis
+                
+                try {
+                    // This is the literal strongest bypass in Android OS. 
+                    // It acts like a true Alarm Clock and slices instantly through Vivo Battery Savers.
+                    val alarmClockInfo = AlarmManager.AlarmClockInfo(triggerAt, pendingIntent)
+                    alarmManager.setAlarmClock(alarmClockInfo, pendingIntent)
+                } catch (e: Exception) {
+                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
