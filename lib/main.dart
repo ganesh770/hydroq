@@ -18,7 +18,7 @@ class HydroQApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'HydroQ',
+      title: 'HydroQ - water reminder and tracker',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
