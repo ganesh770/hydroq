@@ -17,7 +17,7 @@ class NotificationService {
   static const _channelName = 'Water Reminders';
   static const _channelDesc = 'Reminders to drink water throughout the day';
 
-  static const _nativeChannel = MethodChannel('com.example.hydroq/reminder');
+  static const _nativeChannel = MethodChannel('com.ganesh_nagireddy.hydroq/reminder');
 
   /// Last scheduling result for UI display
   int lastScheduledCount = 0;
